@@ -96,7 +96,7 @@ mz2<-toupper(substr(mz, start = 1, stop = 3))
 
 dd<- sprintf("%s-%s-19",dayz,mz2)
 print(dd)
-case.data["date_diference"]<- Sys.Date()-as.Date(dd,format="%d-%b-%y")+1
+case.data["last_deposit"]<- Sys.Date()-as.Date(dd,format="%d-%b-%y")+1
 case.data["Format_Date"]<-as.Date(dd,format="%d-%b-%y")
 View(case.data)
 
@@ -113,11 +113,11 @@ time_series$Date<-as.Date(dd,format="%d-%b-%y")
 time_series["Deposit"]<-case.data$deposit
 View(time_series)
 
-def.period <- case.data %>% filter(case.data$Format_Date >= as.Date("2019-01-01") & case.data$Format_Date <= as.Date("2019-03-01"))
-def.period2 <- case.data %>% filter(case.data$Format_Date >= as.Date("2019-03-01") & case.data$Format_Date <= as.Date("2019-06-01"))
+def.period <- case.data %>% filter(case.data$Format_Date >= as.Date("2019-01-01") & case.data$Format_Date <= as.Date("2019-03-31"))
+def.period2 <- case.data %>% filter(case.data$Format_Date >= as.Date("2019-04-01") & case.data$Format_Date <= as.Date("2019-06-30"))
 min(def.period$Format_Date)
 max(def.period$Format_Date)
-plot(case.data$deposit ~ def.period$Format_Date ,type='l')
+#plot(case.data$deposit ~ def.period$Format_Date ,type='l')
 
 ggplot(data = def.period, aes(Format_Date, deposit))+
   geom_bar(stat="identity", fill="darkorchid4")+
@@ -127,13 +127,16 @@ ggplot(data = def.period, aes(Format_Date, deposit))+
 ggplot(data = def.period2, aes(Format_Date, deposit))+
   geom_bar(stat="identity", fill="darkorchid4")+
   xlab("Date (Quarterly)") + ylab("Deposits") +
-  ggtitle("TS graph showing months mar-jun") + theme_bw()
+  ggtitle("TS graph showing months apr-jun") + theme_bw()
 
 #fig <- plot_ly(case.data, case.data$deposit = ~case.data$deposit, case.data$month = ~random_y, type = 'scatter', mode = 'lines')
 
 View(def.period)
 
 #questions 7a
+case.data<-case.data[!(case.data$job==" "),]
+case.data<-case.data[!(case.data$job==""),]
+summary.()
 ggplot(data = def.period, aes(job, mean(deposit)))+
   geom_bar(stat="identity", fill="darkorchid4")+
   xlab("job type") + ylab(" avg Deposits") +
@@ -145,13 +148,92 @@ ggplot(data = def.period2, aes(job, mean(deposit)))+
   ggtitle("TS graph showing months mar-jun with avg deposits for each job type") + theme_linedraw()
 
 
-#7b
-ggplot(data = def.period2, aes(job, education=="tertiary"))+
+
+
+ggplot(data = case.data, aes(job, mean(deposit)))+
   geom_bar(stat="identity", fill="darkorchid4")+
   xlab("job type") + ylab(" avg Deposits") +
-  ggtitle("TS graph showing months jan-mar with avg deposits for each job type") + theme_linedraw()
+  ggtitle("TS graph showing entire dataset avg deposits for each job type") + theme_linedraw()
 
 
+#7b
+
+tertiary <- case.data %>% filter(case.data$education == "tertiary")
+admin <- case.data %>% filter(case.data$job == "blue-collar")
+admin_t<-admin %>% filter(admin$education == "tertiary")
+admin_s<-admin %>% filter(admin$education == "secondary")
+admin_p<-admin %>% filter(admin$education == "primary")
+summary(admin)
+#View(tertiary)
+ggplot(data = admin, aes(education,admin$job))+
+  geom_bar(stat="identity", fill="darkorchid4")+
+  xlab("job type") + ylab(" number of persons ") +
+  ggtitle("TS graph showing relationship blue collar and education level") + theme_linedraw()
+
+
+
+get_job <- function(jobb,type){
+  
+  f1 <- case.data %>% filter(case.data$job == jobb)
+  t<-f1 %>% filter(f1$education == "tertiary")
+  s<-f1 %>% filter(f1$education == "secondary")
+  p<-f1 %>% filter(f1$education == "primary")
+  my_list <- list("primary" = length(p$education), "secondary" = length(s$education), "tertiary" = length(t$education))
+  return(my_list[[type]]) 
+}
+
+# Pie Chart with Percentages
+#admin  
+build_graph<- function(title,jobb,type,type1,type2){
+slices <- c(get_job(jobb,type), get_job(jobb,type1),get_job(jobb,type2))
+lbls <- c(type, type1, type2)
+pct <- round(slices/sum(slices)*100)
+lbls <- paste(lbls, pct) # add percents to labels
+lbls <- paste(lbls,"%",sep="") # ad % to labels
+pie(slices,labels = lbls, col=rainbow(length(lbls)),
+    main=title)
+
+}
+
+
+library(ggplot2)
+dfnew <- subset(case.data, select=c("job", "education"))
+                barplot(table(dfnew), main="Graph",         xlab="Education Level", col=c("darkblue","red","green","purple","white","black","yellow","orange","pink","blue","white","brown"),         legend = rownames(table(dfnew)), beside=TRUE)
+table(dfnew)
+
+
+admin_level<-build_graph("Admin education levels","admin.","primary","secondary","tertiary")
+
+admin_level
+
+blue_level<-build_graph("blue-collar education levels","blue-collar","primary","secondary","tertiary")
+
+blue_level
+
+entrepreneur_level<-build_graph("entrepreneur education levels","entrepreneur","primary","secondary","tertiary")
+
+entrepreneur_level
+
+
+
+#7c
+#assumption made: persons that have no loan and no mortgage
+not_morg <- case.data %>% filter(case.data$housing == "no" & case.data$loan=="no")
+mortgage_precent <- (length(not_morg$housing)/length(case.data$housing))*100
+ps="%"
+sprintf("The percentage of persons who dont have mortgage and loan is %s%s percent",mortgage_precent,ps)
+
+
+#7d
+
+ggplot(data = case.data, aes(age_bin, mean(balance)))+
+  geom_bar(stat="identity", fill="darkorchid4")+
+  xlab("Age group") + ylab(" avg Balance") +
+  ggtitle("TS graph showing entire dataset avg balance for each age group") + theme_linedraw()
+
+
+
+#7e
 
 
 
