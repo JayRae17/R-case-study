@@ -1,5 +1,5 @@
 rm(list=ls())
-
+options("scipen"=100,"digits"=22)
 
 case.data<-read.csv(file.choose(),stringsAsFactors = TRUE,header=TRUE, sep = ",")
 View(case.data)
@@ -106,12 +106,7 @@ View(case.data)
 #6
 library(dplyr)
 library(plotly)
-time_series<-data.frame()
-#col_num<-c("Date","Deposit")
-#colnames(time_series)<-col_num
-time_series$Date<-as.Date(dd,format="%d-%b-%y")
-time_series["Deposit"]<-case.data$deposit
-View(time_series)
+
 
 def.period <- case.data %>% filter(case.data$Format_Date >= as.Date("2019-01-01") & case.data$Format_Date <= as.Date("2019-03-31"))
 def.period2 <- case.data %>% filter(case.data$Format_Date >= as.Date("2019-04-01") & case.data$Format_Date <= as.Date("2019-06-30"))
@@ -136,7 +131,7 @@ View(def.period)
 #questions 7a
 case.data<-case.data[!(case.data$job==" "),]
 case.data<-case.data[!(case.data$job==""),]
-summary.()
+
 ggplot(data = def.period, aes(job, mean(deposit)))+
   geom_bar(stat="identity", fill="darkorchid4")+
   xlab("job type") + ylab(" avg Deposits") +
@@ -183,7 +178,7 @@ get_job <- function(jobb,type){
 }
 
 # Pie Chart with Percentages
-#admin  
+
 build_graph<- function(title,jobb,type,type1,type2){
 slices <- c(get_job(jobb,type), get_job(jobb,type1),get_job(jobb,type2))
 lbls <- c(type, type1, type2)
@@ -197,22 +192,30 @@ pie(slices,labels = lbls, col=rainbow(length(lbls)),
 
 
 library(ggplot2)
-dfnew <- subset(case.data, select=c("job", "education"))
-                barplot(table(dfnew), main="Graph",         xlab="Education Level", col=c("darkblue","red","green","purple","white","black","yellow","orange","pink","blue","white","brown"),         legend = rownames(table(dfnew)), beside=TRUE)
-table(dfnew)
 
 
 admin_level<-build_graph("Admin education levels","admin.","primary","secondary","tertiary")
 
-admin_level
 
-blue_level<-build_graph("blue-collar education levels","blue-collar","primary","secondary","tertiary")
+blue_level<-build_graph("Blue-collar education levels","blue-collar","primary","secondary","tertiary")
 
-blue_level
+entrepreneur_level<-build_graph("Entrepreneur education levels","entrepreneur","primary","secondary","tertiary")
 
-entrepreneur_level<-build_graph("entrepreneur education levels","entrepreneur","primary","secondary","tertiary")
+unemployed_level<-build_graph("Unemployed education levels","unemployed","primary","secondary","tertiary")
 
-entrepreneur_level
+technnician_level<-build_graph("Technician education levels","technician","primary","secondary","tertiary")
+
+student_level<-build_graph("Student education levels","student","primary","secondary","tertiary")
+
+Services_level<-build_graph("Services education levels","services","primary","secondary","tertiary")
+
+self_employed_level<-build_graph("Self-Employed education levels","self-employed","primary","secondary","tertiary")
+
+retired_level<-build_graph("Retired education levels","retired","primary","secondary","tertiary")
+management_level<-build_graph("Management education levels","management","primary","secondary","tertiary")
+housemaid_level<-build_graph("Housemaid education levels","housemaid","primary","secondary","tertiary")
+
+
 
 
 
@@ -225,7 +228,7 @@ sprintf("The percentage of persons who dont have mortgage and loan is %s%s perce
 
 
 #7d
-
+boxplot(case.data$balance)
 ggplot(data = case.data, aes(age_bin, mean(balance)))+
   geom_bar(stat="identity", fill="darkorchid4")+
   xlab("Age group") + ylab(" avg Balance") +
@@ -235,5 +238,24 @@ ggplot(data = case.data, aes(age_bin, mean(balance)))+
 
 #7e
 
+data.cor<- case.data[11:12]
+data.cor
+cor(case.data$deposit,case.data$balance)
+library(corrplot)
+corrplot(cor(data.cor), method="number")
+
+#7d
+
+married_overdraft<- case.data[case.data$marital=="married" & case.data$balance< 0,]
+married_overdraft
+percent_mo<- nrow(married_overdraft)/nrow(case.data)*100
+ps="%"
+sprintf("The percentage of persons who dont have overdraft and married is %s%s percent",percent_mo,ps)
 
 
+#7g ii
+
+lead_list<- case.data[case.data$balance> mean(case.data$balance)  & case.data$loan=="no" & case.data$housing=="yes",]
+lead_list
+summary(lead_list)
+View(lead_list)
